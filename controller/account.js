@@ -14,6 +14,7 @@ const bcrypt = require("bcrypt");
 //   });
 // };
 
+
 const CreateAccount = async (req, res) => {
   try {
     if (
@@ -26,15 +27,6 @@ const CreateAccount = async (req, res) => {
       req.body.password &&
       req.body.birthday
     ) {
-      //create table
-      // pool.query(createTablAccount, (error, results, fields) => {
-      //   if (error) {
-      //     return res
-      //       .status(500)
-      //       .json({ error: "Error during creation of table" });
-      //   }
-      // });
-
       const checkTableQuery = `
         SHOW TABLES LIKE 'Account'
       `;
@@ -47,42 +39,74 @@ const CreateAccount = async (req, res) => {
 
         if (results.length === 0) {
           // Table does not exist, so create it
+          console.log("Account table is created");
           pool.query(createTablAccount, (error) => {
             if (error) {
               console.error("Error during creation of table:", error);
               return res.status(500).json({ error: "Error during table creation" });
             }
           });
+        } else {
+          // Table exists, check for existing email or phone
+          const checkExistingQuery = `
+            SELECT * FROM Account WHERE email = ? OR phone = ?
+          `;
+
+          const existingParams = [req.body.email, req.body.phone];
+
+          pool.query(checkExistingQuery, existingParams, async (error, results) => {
+            if (error) {
+              console.error("Error checking for existing email/phone:", error);
+              return res.status(500).json({ error: "Internal Server Error" });
+            }
+
+            if (results.length > 0) {
+              // Email or phone number already exists
+              return res.status(400).json({ status: 400, error: "Email or phone number already in use" });
+            }
+
+            console.log("Further execution");
+
+            const characters =
+              "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+            let randomString = "";
+            let length = 10;
+
+            for (let i = 0; i < length; i++) {
+              const randomIndex = Math.floor(Math.random() * characters.length);
+              randomString += characters.charAt(randomIndex);
+            }
+            const truncatedHashedPassword = await bcrypt.hash(randomString, 10);
+            const hashedPassword = truncatedHashedPassword.substring(0, 50);
+
+            const timestampInMilliseconds = req.body.birthday;
+            const date = new Date(timestampInMilliseconds);
+            const birthdayformattedDate = date.toISOString().slice(0, 10);
+
+            let created_at = Date.now();
+
+            const created_attimestampInMilliseconds = created_at;
+            const created_adate = new Date(created_attimestampInMilliseconds);
+            const created_adateformattedDatetime = created_adate.toISOString().slice(0, 19).replace("T", " ");
+
+            const insertDataQuery = `
+              INSERT INTO Account (id, first_name, last_name, email, phone, password, birthday, created_at)
+              VALUES (${req.body.id}, "${req.body.first_name}","${req.body.last_name}",
+              "${req.body.email}","${req.body.phone}","${hashedPassword}",
+              "${birthdayformattedDate}", "${created_adateformattedDatetime}")
+            `;
+
+            pool.query(insertDataQuery, (error, results) => {
+              console.log(error, results);
+              if (error) {
+                return res.status(500).json({ error: "Internal Server Error" });
+              }
+
+              res.json({ message: "Data inserted successfully!" });
+            });
+          });
         }
-      })
-
-      const characters =
-        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
-      let randomString = "";
-      let length = 10;
-
-      for (let i = 0; i < length; i++) {
-        const randomIndex = Math.floor(Math.random() * characters.length);
-        randomString += characters.charAt(randomIndex);
-      }
-      const hashedPassword = await bcrypt.hash(randomString, 10);
-
-      let created_at = Date.now();
-      const insertDataQuery = `
-        INSERT INTO Account (id, first_name, last_name,email,phone,password,
-          birthday,created_at) VALUES (${req.body.id}, "${req.body.first_name}","${req.body.last_name}",
-          "${req.body.email}","${req.body.phone}","${hashedPassword}", ${req.body.birthday},
-          "${req.body.birthday}", "${created_at}")
-      `;
-
-      pool.query(insertDataQuery, (error, results) => {
-        console.log(error, results);
-        if (error) {
-          return res.status(500).json({ error: "Internal Server Error" });
-        }
-
-        res.json({ message: "Data inserted successfully!" });
       });
     } else {
       return res

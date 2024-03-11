@@ -9,7 +9,8 @@ const {
 } = require("../controller/account");
 
 route.get("/", (req, res) => {
-  GetUser(req, res);
+//   GetUser(req, res);
+ res.send("Welcome  to Account")
 });
 
 route.post("/CreateAccount", (req, res) => {
