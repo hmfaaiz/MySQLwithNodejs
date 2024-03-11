@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS Account (
   last_name VARCHAR(100) NOT NULL,
   email VARCHAR(100) UNIQUE NOT NULL,
   phone VARCHAR(16) UNIQUE NOT NULL,
-  password VARCHAR(50) NOT NULL,
+  password VARCHAR(60) NOT NULL,
   birthday Date NOT NULL,
   created_at DATETIME NOT NULL,
   last_modified DATETIME
