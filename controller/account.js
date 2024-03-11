@@ -3,6 +3,7 @@ const { createTablAccount } = require("../model/account");
 const validator = require("validator");
 const bcrypt = require("bcrypt");
 const { GenerateToken, Authentication } = require("../security/authentication");
+const {mailsender}=require("../emailNotification/emailSetup");
 
 const CreateAccount = async (req, res) => {
   try {
@@ -95,14 +96,14 @@ const CreateAccount = async (req, res) => {
               "${birthdayformattedDate}", "${created_adateformattedDatetime}")
             `;
 
-              pool.query(insertDataQuery, (error, results) => {
+              pool.query(insertDataQuery,async (error, results) => {
                 console.log(error, results);
                 if (error) {
                   return res
                     .status(500)
                     .json({ error: "Internal Server Error" });
                 }
-
+             let emailsend= await mailsender(req.body.first_name)
                 res.json({ message: "Data inserted successfully!" });
               });
             }
